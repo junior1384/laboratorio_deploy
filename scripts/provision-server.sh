@@ -138,11 +138,14 @@ if [[ ! -x "$RUNNER_SVC" ]]; then
     exit 1
 fi
 
-if "$RUNNER_SVC" status 2>&1 | grep -q "not installed"; then
+echo
+echo "Verificando serviço atual do runner..."
+
+if sudo "$RUNNER_SVC" status 2>&1 | grep -q "not installed"; then
     echo "Serviço do runner ainda não está instalado."
     echo "Instalando serviço do runner..."
 
-    "$RUNNER_SVC" install juniorwinkler
+    sudo "$RUNNER_SVC" install juniorwinkler
 else
     echo "Serviço do runner já está instalado."
 fi
@@ -153,7 +156,7 @@ echo "Recarregando systemd após configuração do runner..."
 systemctl daemon-reload
 
 echo
-echo "Habilitando serviço do runner para iniciar com o sistema..."
+echo "Identificando serviço do runner..."
 
 RUNNER_SERVICE="$(
     systemctl list-unit-files --type=service --no-legend \
@@ -162,23 +165,25 @@ RUNNER_SERVICE="$(
 
 if [[ -z "$RUNNER_SERVICE" ]]; then
     echo "ERRO: serviço do runner não foi encontrado."
+    echo
+    echo "Serviços actions.runner encontrados:"
+    systemctl list-unit-files --type=service --no-legend \
+        | grep '^actions\.runner\.' || true
     exit 1
 fi
+
+echo
+echo "Serviço do runner encontrado:"
+echo "$RUNNER_SERVICE"
+
+echo
+echo "Habilitando serviço do runner para iniciar com o sistema..."
 
 systemctl enable "$RUNNER_SERVICE"
 
 echo
-echo "Serviço do runner:"
-echo "$RUNNER_SERVICE"
+echo "Status do serviço do runner:"
 
-echo
-echo "IMPORTANTE:"
-echo "O runner atual está executando este workflow manualmente."
-echo "Por isso o serviço NÃO será iniciado durante este job."
-echo "Após reinicialização do servidor, o systemd iniciará o runner automaticamente."
-
-echo
-echo "RUNNER:"
 systemctl status "$RUNNER_SERVICE" --no-pager || true
 
 echo
