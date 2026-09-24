@@ -153,9 +153,11 @@ if [[ "$TECHNOLOGY" == "dotnet" ]]; then
         echo ".NET não encontrado."
         echo "Instalando SDK necessário..."
         DOTNET_INSTALLED=0
+
     elif "$DOTNET_BIN" --list-sdks | grep -q "^${DOTNET_CHANNEL}\."; then
         echo "SDK .NET $DOTNET_CHANNEL já está instalado."
         DOTNET_INSTALLED=1
+
     else
         echo "SDK .NET $DOTNET_CHANNEL não encontrado."
         echo "Instalando SDK necessário..."
@@ -267,6 +269,64 @@ fi
 
 echo "Release anterior: ${PREVIOUS_RELEASE:-nenhuma}"
 
+# ============================================================
+# Função de rollback
+# ============================================================
+
+rollback() {
+
+    echo
+    echo "======================================"
+    echo " ROLLBACK"
+    echo "======================================"
+
+    if [[ -z "$PREVIOUS_RELEASE" ]]; then
+        echo "Nenhuma release anterior disponível."
+        return 1
+    fi
+
+    echo "Release anterior:"
+    echo "$PREVIOUS_RELEASE"
+
+    if [[ ! -d "$PREVIOUS_RELEASE" ]]; then
+        echo "ERRO: release anterior não existe."
+        return 1
+    fi
+
+    if [[ ! -f "$PREVIOUS_RELEASE/app.dll" ]]; then
+        echo "ERRO: release anterior não possui app.dll."
+        echo "Rollback cancelado para evitar ativar uma release incompatível."
+        return 1
+    fi
+
+    echo "Release anterior validada."
+
+    ln -s "$PREVIOUS_RELEASE" "$APP_DIR/current.rollback"
+
+    mv -Tf "$APP_DIR/current.rollback" "$APP_DIR/current"
+
+    echo "Current restaurado:"
+    readlink -f "$APP_DIR/current"
+
+    sudo -n systemctl restart "$SERVICE"
+
+    echo "Serviço reiniciado após rollback."
+
+    return 0
+}
+
+echo
+echo "======================================"
+echo " VALIDANDO RELEASE"
+echo "======================================"
+
+if [[ ! -f "$RELEASE_DIR/app.dll" ]]; then
+    echo "ERRO: release criada não possui app.dll."
+    exit 1
+fi
+
+echo "Release válida."
+
 echo
 echo "======================================"
 echo " ATUALIZANDO CURRENT"
@@ -291,22 +351,15 @@ echo "======================================"
 echo " VALIDANDO SERVIÇO"
 echo "======================================"
 
+sleep 2
+
 if ! sudo -n systemctl is-active --quiet "$SERVICE"; then
 
     echo "ERRO: serviço não ficou ativo."
 
     sudo -n systemctl status "$SERVICE" --no-pager || true
 
-    if [[ -n "$PREVIOUS_RELEASE" ]]; then
-
-        echo "Restaurando release anterior..."
-
-        ln -s "$PREVIOUS_RELEASE" "$APP_DIR/current.rollback"
-
-        mv -Tf "$APP_DIR/current.rollback" "$APP_DIR/current"
-
-        sudo -n systemctl restart "$SERVICE"
-    fi
+    rollback || true
 
     exit 1
 fi
@@ -322,25 +375,33 @@ HEALTH_URL="http://127.0.0.1:${PORT}/health"
 
 echo "URL: $HEALTH_URL"
 
-if ! curl \
-    --fail \
-    --silent \
-    --show-error \
-    "$HEALTH_URL"; then
+HEALTH_OK=0
+
+for attempt in {1..5}; do
+
+    echo "Tentativa $attempt/5..."
+
+    if curl \
+        --fail \
+        --silent \
+        --show-error \
+        "$HEALTH_URL"; then
+
+        HEALTH_OK=1
+        break
+    fi
+
+    sleep 2
+done
+
+if [[ "$HEALTH_OK" -ne 1 ]]; then
 
     echo
     echo "ERRO: health check falhou."
 
-    if [[ -n "$PREVIOUS_RELEASE" ]]; then
+    sudo -n systemctl status "$SERVICE" --no-pager || true
 
-        echo "Restaurando release anterior..."
-
-        ln -s "$PREVIOUS_RELEASE" "$APP_DIR/current.rollback"
-
-        mv -Tf "$APP_DIR/current.rollback" "$APP_DIR/current"
-
-        sudo -n systemctl restart "$SERVICE"
-    fi
+    rollback || true
 
     exit 1
 fi
