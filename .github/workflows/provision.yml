@@ -48,3 +48,25 @@ jobs:
             exec ./scripts/provision-server.sh
           ' <<< "$SUDO_PASSWORD"
 
+      - name: Iniciar ambientes
+        run: |
+          echo "======================================"
+          echo " Iniciando ambientes"
+          echo "======================================"
+
+          sudo -n systemctl start deploy-lab-test.service
+          sudo -n systemctl start deploy-lab-prod.service
+
+      - name: Validar ambientes
+        run: |
+          echo "======================================"
+          echo " Validando ambientes"
+          echo "======================================"
+
+          echo
+          echo "HOMOLOG:"
+          sudo -n systemctl is-active deploy-lab-test.service
+
+          echo
+          echo "PROD:"
+          sudo -n systemctl is-active deploy-lab-prod.service
