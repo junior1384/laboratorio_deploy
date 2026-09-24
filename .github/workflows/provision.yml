@@ -11,7 +11,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run provisioning
+      - name: Diagnosticar permissões
         run: |
-          chmod +x scripts/provision-server.sh
-          ./scripts/provision-server.sh
+          echo "======================================"
+          echo " USUÁRIO"
+          echo "======================================"
+          whoami
+          id
+
+          echo
+          echo "======================================"
+          echo " SUDO"
+          echo "======================================"
+          sudo -n -l || true
+
+          echo
+          echo "======================================"
+          echo " ARQUIVOS SUDOERS"
+          echo "======================================"
+          ls -la /etc/sudoers.d/ || true
+
+          echo
+          echo "======================================"
+          echo " TESTE SUDO"
+          echo "======================================"
+          sudo -n true
