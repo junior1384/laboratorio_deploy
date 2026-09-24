@@ -30,6 +30,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+       - name: Diagnóstico
+        run: |
+          echo "USER:"
+          whoami
+
+          echo
+          echo "ID:"
+          id
+
+          echo
+          echo "SUDO:"
+          sudo -n -l
+
       - name: Deploy
         run: |
           chmod +x scripts/deploy.sh
