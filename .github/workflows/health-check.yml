@@ -1,0 +1,33 @@
+name: Health Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: self-hosted
+
+    steps:
+      - name: Verificar TEST
+        run: |
+          echo "======================================"
+          echo " HEALTH CHECK - HOMOLOG"
+          echo "======================================"
+
+          curl --fail --silent --show-error \
+            http://127.0.0.1:5001/
+
+          echo
+          echo "HOMOLOG OK"
+
+      - name: Verificar PROD
+        run: |
+          echo "======================================"
+          echo " HEALTH CHECK - PROD"
+          echo "======================================"
+
+          curl --fail --silent --show-error \
+            http://127.0.0.1:5002/
+
+          echo
+          echo "PROD OK"
