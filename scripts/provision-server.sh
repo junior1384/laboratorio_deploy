@@ -139,6 +139,11 @@ if [[ ! -x "$RUNNER_SVC" ]]; then
 fi
 
 echo
+echo "Entrando no diretório do runner..."
+
+cd "$RUNNER_DIR"
+
+echo
 echo "Verificando serviço do runner..."
 
 RUNNER_SERVICE="$(
@@ -154,7 +159,7 @@ if [[ -z "$RUNNER_SERVICE" ]]; then
     echo "Serviço do runner não está instalado."
     echo "Instalando serviço do runner..."
 
-    "$RUNNER_SVC" install juniorwinkler
+    ./svc.sh install juniorwinkler
 
     echo
     echo "Recarregando systemd..."
