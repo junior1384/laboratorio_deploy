@@ -50,4 +50,17 @@ echo "PROD:"
 systemctl status deploy-lab-prod.service --no-pager || true
 
 echo
+echo "======================================"
+echo " Configuração dos serviços"
+echo "======================================"
+
+echo
+echo "HOMOLOG:"
+systemctl cat deploy-lab-test.service || true
+
+echo
+echo "PROD:"
+systemctl cat deploy-lab-prod.service || true
+
+echo
 echo "Provisionamento concluído."
