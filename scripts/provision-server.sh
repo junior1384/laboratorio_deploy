@@ -126,6 +126,63 @@ sudo systemctl enable deploy-lab-prod.service
 
 echo
 echo "======================================"
+echo " Configurando runner como serviço"
+echo "======================================"
+
+RUNNER_DIR="/home/juniorwinkler/actions-runner"
+RUNNER_SVC="$RUNNER_DIR/svc.sh"
+
+if [[ ! -x "$RUNNER_SVC" ]]; then
+    echo "ERRO: runner não encontrado em:"
+    echo "$RUNNER_DIR"
+    exit 1
+fi
+
+if "$RUNNER_SVC" status 2>&1 | grep -q "not installed"; then
+    echo "Serviço do runner ainda não está instalado."
+    echo "Instalando serviço do runner..."
+
+    "$RUNNER_SVC" install juniorwinkler
+else
+    echo "Serviço do runner já está instalado."
+fi
+
+echo
+echo "Recarregando systemd após configuração do runner..."
+
+systemctl daemon-reload
+
+echo
+echo "Habilitando serviço do runner para iniciar com o sistema..."
+
+RUNNER_SERVICE="$(
+    systemctl list-unit-files --type=service --no-legend \
+        | awk '/^actions\.runner\..*\.service/ {print $1; exit}'
+)"
+
+if [[ -z "$RUNNER_SERVICE" ]]; then
+    echo "ERRO: serviço do runner não foi encontrado."
+    exit 1
+fi
+
+systemctl enable "$RUNNER_SERVICE"
+
+echo
+echo "Serviço do runner:"
+echo "$RUNNER_SERVICE"
+
+echo
+echo "IMPORTANTE:"
+echo "O runner atual está executando este workflow manualmente."
+echo "Por isso o serviço NÃO será iniciado durante este job."
+echo "Após reinicialização do servidor, o systemd iniciará o runner automaticamente."
+
+echo
+echo "RUNNER:"
+systemctl status "$RUNNER_SERVICE" --no-pager || true
+
+echo
+echo "======================================"
 echo " Estrutura criada"
 echo "======================================"
 
