@@ -1,3 +1,4 @@
+```yaml
 name: Provision Server
 
 on:
@@ -47,4 +48,4 @@ jobs:
           sudo -S bash -c '
             exec ./scripts/provision-server.sh
           ' <<< "$SUDO_PASSWORD"
-
+```
