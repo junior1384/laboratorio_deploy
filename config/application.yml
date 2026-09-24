@@ -1,0 +1,51 @@
+```yaml
+name: Provision Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  provision:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verificar usuário e permissões
+        run: |
+          echo "======================================"
+          echo " USUÁRIO"
+          echo "======================================"
+
+          whoami
+          id
+
+          echo
+          echo "======================================"
+          echo " SUDO ATUAL"
+          echo "======================================"
+
+          sudo -n -l || true
+
+      - name: Provisionar servidor
+        env:
+          SUDO_PASSWORD: ${{ secrets.SUDO_PASSWORD }}
+        run: |
+          echo "======================================"
+          echo " Provisionamento do servidor"
+          echo "======================================"
+
+          if [ -z "$SUDO_PASSWORD" ]; then
+            echo "ERRO: Secret SUDO_PASSWORD não configurado."
+            exit 1
+          fi
+
+          chmod +x scripts/provision-server.sh
+
+          printf '%s\n' "$SUDO_PASSWORD" | sudo -S -v
+
+          sudo -S bash -c '
+            exec ./scripts/provision-server.sh
+          ' <<< "$SUDO_PASSWORD"
+```
