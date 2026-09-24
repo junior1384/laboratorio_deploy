@@ -6,37 +6,19 @@ REPOSITORY="${1:-}"
 REF="${2:-}"
 ENVIRONMENT="${3:-}"
 
-DOTNET_BIN="/home/juniorwinkler/.dotnet/dotnet"
+DOTNET_DIR="/home/juniorwinkler/.dotnet"
+DOTNET_BIN="$DOTNET_DIR/dotnet"
+DOTNET_INSTALL_SCRIPT="/tmp/dotnet-install.sh"
 
 echo "======================================"
 echo " DEPLOY"
 echo "======================================"
 
-# ======================================
-# Validar parâmetros
-# ======================================
-
-if [[ -z "$REPOSITORY" ]]; then
-    echo "ERRO: repositório não informado."
-    echo "Uso: ./scripts/deploy.sh <repository> <ref> <environment>"
+if [[ -z "$REPOSITORY" || -z "$REF" || -z "$ENVIRONMENT" ]]; then
+    echo "Uso:"
+    echo "./scripts/deploy.sh <repository> <ref> <environment>"
     exit 1
 fi
-
-if [[ -z "$REF" ]]; then
-    echo "ERRO: ref não informado."
-    echo "Uso: ./scripts/deploy.sh <repository> <ref> <environment>"
-    exit 1
-fi
-
-if [[ -z "$ENVIRONMENT" ]]; then
-    echo "ERRO: ambiente não informado."
-    echo "Uso: ./scripts/deploy.sh <repository> <ref> <environment>"
-    exit 1
-fi
-
-# ======================================
-# Configuração do ambiente
-# ======================================
 
 case "$ENVIRONMENT" in
     test)
@@ -51,22 +33,16 @@ case "$ENVIRONMENT" in
         ;;
     *)
         echo "ERRO: ambiente inválido: $ENVIRONMENT"
-        echo "Ambientes permitidos: test ou prod"
         exit 1
         ;;
 esac
 
-echo
 echo "Repositório : $REPOSITORY"
 echo "Ref         : $REF"
 echo "Ambiente    : $ENVIRONMENT"
 echo "Diretório   : $APP_DIR"
 echo "Serviço     : $SERVICE"
 echo "Porta       : $PORT"
-
-# ======================================
-# Preparar diretório temporário
-# ======================================
 
 WORK_DIR="$(mktemp -d)"
 
@@ -76,10 +52,6 @@ cleanup() {
 
 trap cleanup EXIT
 
-# ======================================
-# Baixar aplicação
-# ======================================
-
 echo
 echo "======================================"
 echo " BAIXANDO APLICAÇÃO"
@@ -87,71 +59,41 @@ echo "======================================"
 
 REPOSITORY_URL="https://github.com/${REPOSITORY}.git"
 
-echo
-echo "URL : $REPOSITORY_URL"
-echo "REF : $REF"
-
 git clone \
     --depth 1 \
     --branch "$REF" \
     "$REPOSITORY_URL" \
     "$WORK_DIR/app"
 
-echo
-echo "Repositório baixado."
-
-# ======================================
-# Identificar commit
-# ======================================
-
 RELEASE_ID="$(git -C "$WORK_DIR/app" rev-parse HEAD)"
 
-echo
-echo "======================================"
-echo " RELEASE"
-echo "======================================"
-
+echo "Repositório baixado."
 echo "Commit: $RELEASE_ID"
-
-# ======================================
-# Detectar tecnologia
-# ======================================
 
 echo
 echo "======================================"
 echo " DETECTANDO TECNOLOGIA"
 echo "======================================"
 
-if find "$WORK_DIR/app" -maxdepth 2 -name "*.csproj" -print -quit | grep -q .; then
+TECHNOLOGY=""
+PROJECT_FILE=""
 
+if find "$WORK_DIR/app" -maxdepth 3 -name "*.csproj" -print -quit | grep -q .; then
     TECHNOLOGY="dotnet"
-
-    PROJECT_FILE="$(find "$WORK_DIR/app" \
-        -maxdepth 2 \
-        -name "*.csproj" \
-        -print -quit)"
+    PROJECT_FILE="$(find "$WORK_DIR/app" -maxdepth 3 -name "*.csproj" -print -quit)"
 
 elif [[ -f "$WORK_DIR/app/package.json" ]]; then
-
     TECHNOLOGY="node"
 
-elif [[ -f "$WORK_DIR/app/requirements.txt" ]]; then
-
+elif [[ -f "$WORK_DIR/app/requirements.txt" || -f "$WORK_DIR/app/pyproject.toml" ]]; then
     TECHNOLOGY="python"
 
 else
-
-    echo "ERRO: não foi possível detectar a tecnologia da aplicação."
+    echo "ERRO: tecnologia não identificada."
     exit 1
-
 fi
 
-echo
 echo "Tecnologia detectada: $TECHNOLOGY"
-
-# ======================================
-# Build
-# ======================================
 
 echo
 echo "======================================"
@@ -160,19 +102,119 @@ echo "======================================"
 
 if [[ "$TECHNOLOGY" == "dotnet" ]]; then
 
-    PROJECT_NAME="$(basename "$PROJECT_FILE" .csproj)"
-    PUBLISH_DIR="$WORK_DIR/publish"
+    echo "Projeto: $PROJECT_FILE"
+
+    if [[ ! -f "$PROJECT_FILE" ]]; then
+        echo "ERRO: projeto .NET não encontrado."
+        exit 1
+    fi
 
     echo
-    echo "Projeto : $PROJECT_FILE"
-    echo "Saída   : $PUBLISH_DIR"
-    echo "Runtime : $DOTNET_BIN"
+    echo "======================================"
+    echo " DETECTANDO TARGET FRAMEWORK"
+    echo "======================================"
+
+    TARGET_FRAMEWORK="$(
+        grep -oPm1 '(?<=<TargetFramework>)[^<]+' "$PROJECT_FILE" || true
+    )"
+
+    if [[ -z "$TARGET_FRAMEWORK" ]]; then
+        TARGET_FRAMEWORK="$(
+            grep -oPm1 '(?<=<TargetFrameworks>)[^<]+' "$PROJECT_FILE" \
+            | cut -d';' -f1 || true
+        )"
+    fi
+
+    if [[ -z "$TARGET_FRAMEWORK" ]]; then
+        echo "ERRO: não foi possível identificar o TargetFramework."
+        exit 1
+    fi
+
+    echo "Target Framework: $TARGET_FRAMEWORK"
+
+    if [[ ! "$TARGET_FRAMEWORK" =~ ^net[0-9]+\.[0-9]+ ]]; then
+        echo "ERRO: TargetFramework não suportado automaticamente:"
+        echo "$TARGET_FRAMEWORK"
+        exit 1
+    fi
+
+    DOTNET_CHANNEL="${BASH_REMATCH[0]#net}"
+
+    echo "Versão .NET necessária: $DOTNET_CHANNEL"
+
+    echo
+    echo "======================================"
+    echo " GARANTINDO SDK .NET"
+    echo "======================================"
+
+    mkdir -p "$DOTNET_DIR"
 
     if [[ ! -x "$DOTNET_BIN" ]]; then
-        echo "ERRO: .NET não encontrado em:"
+        echo ".NET não encontrado."
+        echo "Instalando SDK necessário..."
+        DOTNET_INSTALLED=0
+    elif "$DOTNET_BIN" --list-sdks | grep -q "^${DOTNET_CHANNEL}\."; then
+        echo "SDK .NET $DOTNET_CHANNEL já está instalado."
+        DOTNET_INSTALLED=1
+    else
+        echo "SDK .NET $DOTNET_CHANNEL não encontrado."
+        echo "Instalando SDK necessário..."
+        DOTNET_INSTALLED=0
+    fi
+
+    if [[ "$DOTNET_INSTALLED" -eq 0 ]]; then
+
+        if [[ ! -f "$DOTNET_INSTALL_SCRIPT" ]]; then
+            echo "Baixando dotnet-install.sh..."
+
+            curl \
+                --fail \
+                --silent \
+                --show-error \
+                --location \
+                https://dot.net/v1/dotnet-install.sh \
+                --output "$DOTNET_INSTALL_SCRIPT"
+
+            chmod +x "$DOTNET_INSTALL_SCRIPT"
+        fi
+
+        "$DOTNET_INSTALL_SCRIPT" \
+            --channel "$DOTNET_CHANNEL" \
+            --install-dir "$DOTNET_DIR" \
+            --no-path
+    fi
+
+    if [[ ! -x "$DOTNET_BIN" ]]; then
+        echo "ERRO: .NET não está disponível em:"
         echo "$DOTNET_BIN"
         exit 1
     fi
+
+    echo
+    echo "SDKs disponíveis:"
+    "$DOTNET_BIN" --list-sdks
+
+    echo
+    echo "Verificando SDK necessário..."
+
+    if ! "$DOTNET_BIN" --list-sdks | grep -q "^${DOTNET_CHANNEL}\."; then
+        echo "ERRO: SDK .NET $DOTNET_CHANNEL não foi instalado corretamente."
+        exit 1
+    fi
+
+    echo "SDK .NET $DOTNET_CHANNEL disponível."
+
+    echo
+    echo "======================================"
+    echo " PUBLICANDO APLICAÇÃO"
+    echo "======================================"
+
+    PROJECT_NAME="$(basename "$PROJECT_FILE" .csproj)"
+    PUBLISH_DIR="$WORK_DIR/publish"
+
+    echo "Projeto : $PROJECT_FILE"
+    echo "Saída   : $PUBLISH_DIR"
+    echo "Runtime : $DOTNET_BIN"
 
     "$DOTNET_BIN" publish \
         "$PROJECT_FILE" \
@@ -182,7 +224,6 @@ if [[ "$TECHNOLOGY" == "dotnet" ]]; then
     MAIN_DLL="$PUBLISH_DIR/$PROJECT_NAME.dll"
 
     if [[ ! -f "$MAIN_DLL" ]]; then
-        echo
         echo "ERRO: DLL principal não encontrada:"
         echo "$MAIN_DLL"
         exit 1
@@ -190,7 +231,8 @@ if [[ "$TECHNOLOGY" == "dotnet" ]]; then
 
 else
 
-    echo "ERRO: tecnologia ainda não possui build configurado: $TECHNOLOGY"
+    echo "ERRO: build ainda não configurado para:"
+    echo "$TECHNOLOGY"
     exit 1
 
 fi
@@ -198,18 +240,12 @@ fi
 echo
 echo "Build concluído."
 
-# ======================================
-# Criar release
-# ======================================
-
 RELEASE_DIR="$APP_DIR/releases/$RELEASE_ID"
 
 echo
 echo "======================================"
 echo " CRIANDO RELEASE"
 echo "======================================"
-
-echo "Release: $RELEASE_DIR"
 
 if [[ -d "$RELEASE_DIR" ]]; then
     echo "Release já existe. Reutilizando."
@@ -223,27 +259,13 @@ else
     echo "Release criada."
 fi
 
-# ======================================
-# Guardar release atual
-# ======================================
-
 PREVIOUS_RELEASE=""
 
 if [[ -L "$APP_DIR/current" ]]; then
     PREVIOUS_RELEASE="$(readlink -f "$APP_DIR/current")"
 fi
 
-echo
-echo "Release anterior:"
-if [[ -n "$PREVIOUS_RELEASE" ]]; then
-    echo "$PREVIOUS_RELEASE"
-else
-    echo "nenhuma"
-fi
-
-# ======================================
-# Atualizar current
-# ======================================
+echo "Release anterior: ${PREVIOUS_RELEASE:-nenhuma}"
 
 echo
 echo "======================================"
@@ -257,22 +279,12 @@ mv -Tf "$APP_DIR/current.new" "$APP_DIR/current"
 echo "Current:"
 readlink -f "$APP_DIR/current"
 
-# ======================================
-# Reiniciar serviço
-# ======================================
-
 echo
 echo "======================================"
 echo " REINICIANDO SERVIÇO"
 echo "======================================"
 
 sudo -n systemctl restart "$SERVICE"
-
-echo "Serviço reiniciado."
-
-# ======================================
-# Validar serviço
-# ======================================
 
 echo
 echo "======================================"
@@ -287,7 +299,6 @@ if ! sudo -n systemctl is-active --quiet "$SERVICE"; then
 
     if [[ -n "$PREVIOUS_RELEASE" ]]; then
 
-        echo
         echo "Restaurando release anterior..."
 
         ln -s "$PREVIOUS_RELEASE" "$APP_DIR/current.rollback"
@@ -295,17 +306,12 @@ if ! sudo -n systemctl is-active --quiet "$SERVICE"; then
         mv -Tf "$APP_DIR/current.rollback" "$APP_DIR/current"
 
         sudo -n systemctl restart "$SERVICE"
-
     fi
 
     exit 1
 fi
 
 echo "Serviço ativo."
-
-# ======================================
-# Health check
-# ======================================
 
 echo
 echo "======================================"
@@ -327,7 +333,6 @@ if ! curl \
 
     if [[ -n "$PREVIOUS_RELEASE" ]]; then
 
-        echo
         echo "Restaurando release anterior..."
 
         ln -s "$PREVIOUS_RELEASE" "$APP_DIR/current.rollback"
@@ -335,7 +340,6 @@ if ! curl \
         mv -Tf "$APP_DIR/current.rollback" "$APP_DIR/current"
 
         sudo -n systemctl restart "$SERVICE"
-
     fi
 
     exit 1
