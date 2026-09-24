@@ -139,41 +139,48 @@ if [[ ! -x "$RUNNER_SVC" ]]; then
 fi
 
 echo
-echo "Verificando serviço atual do runner..."
-
-if sudo "$RUNNER_SVC" status 2>&1 | grep -q "not installed"; then
-    echo "Serviço do runner ainda não está instalado."
-    echo "Instalando serviço do runner..."
-
-    sudo "$RUNNER_SVC" install juniorwinkler
-else
-    echo "Serviço do runner já está instalado."
-fi
-
-echo
-echo "Recarregando systemd após configuração do runner..."
-
-systemctl daemon-reload
-
-echo
-echo "Identificando serviço do runner..."
+echo "Verificando serviço do runner..."
 
 RUNNER_SERVICE="$(
-    systemctl list-unit-files --type=service --no-legend \
-        | awk '/^actions\.runner\..*\.service/ {print $1; exit}'
+    find /etc/systemd/system \
+        -maxdepth 1 \
+        -type f \
+        -name 'actions.runner.*.service' \
+        -printf '%f\n' \
+        | head -n 1
 )"
 
 if [[ -z "$RUNNER_SERVICE" ]]; then
-    echo "ERRO: serviço do runner não foi encontrado."
+    echo "Serviço do runner não está instalado."
+    echo "Instalando serviço do runner..."
+
+    "$RUNNER_SVC" install juniorwinkler
+
     echo
-    echo "Serviços actions.runner encontrados:"
-    systemctl list-unit-files --type=service --no-legend \
-        | grep '^actions\.runner\.' || true
+    echo "Recarregando systemd..."
+
+    systemctl daemon-reload
+
+    RUNNER_SERVICE="$(
+        find /etc/systemd/system \
+            -maxdepth 1 \
+            -type f \
+            -name 'actions.runner.*.service' \
+            -printf '%f\n' \
+            | head -n 1
+    )"
+else
+    echo "Serviço do runner já está instalado:"
+    echo "$RUNNER_SERVICE"
+fi
+
+if [[ -z "$RUNNER_SERVICE" ]]; then
+    echo "ERRO: serviço do runner não foi criado."
     exit 1
 fi
 
 echo
-echo "Serviço do runner encontrado:"
+echo "Serviço do runner:"
 echo "$RUNNER_SERVICE"
 
 echo
