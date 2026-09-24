@@ -25,6 +25,58 @@ chown -R juniorwinkler:juniorwinkler "$PROD_DIR"
 
 echo
 echo "======================================"
+echo " Configurando serviços systemd"
+echo "======================================"
+
+echo
+echo "Criando serviço HOMOLOG..."
+
+sudo tee /etc/systemd/system/deploy-lab-test.service > /dev/null <<EOF
+[Unit]
+Description=Deploy Lab API - TEST
+After=network.target
+
+[Service]
+WorkingDirectory=/var/www/deploy-lab-test/current
+ExecStart=/home/juniorwinkler/.dotnet/dotnet /var/www/deploy-lab-test/current/DeployLabApi.dll
+Environment=ASPNETCORE_URLS=http://0.0.0.0:5001
+Environment=ASPNETCORE_ENVIRONMENT=Test
+Restart=always
+RestartSec=5
+User=juniorwinkler
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo
+echo "Criando serviço PROD..."
+
+sudo tee /etc/systemd/system/deploy-lab-prod.service > /dev/null <<EOF
+[Unit]
+Description=Deploy Lab API - PROD
+After=network.target
+
+[Service]
+WorkingDirectory=/var/www/deploy-lab-prod/current
+ExecStart=/home/juniorwinkler/.dotnet/dotnet /var/www/deploy-lab-prod/current/DeployLabApi.dll
+Environment=ASPNETCORE_URLS=http://0.0.0.0:5002
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Restart=always
+RestartSec=5
+User=juniorwinkler
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo
+echo "Recarregando systemd..."
+
+sudo systemctl daemon-reload
+
+echo
+echo "======================================"
 echo " Estrutura criada"
 echo "======================================"
 
