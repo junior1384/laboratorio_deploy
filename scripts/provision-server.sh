@@ -37,4 +37,17 @@ echo "PROD:"
 ls -la "$PROD_DIR"
 
 echo
+echo "======================================"
+echo " Serviços atuais"
+echo "======================================"
+
+echo
+echo "HOMOLOG:"
+systemctl status deploy-lab-test.service --no-pager || true
+
+echo
+echo "PROD:"
+systemctl status deploy-lab-prod.service --no-pager || true
+
+echo
 echo "Provisionamento concluído."
