@@ -79,7 +79,7 @@ After=network.target
 
 [Service]
 WorkingDirectory=/var/www/deploy-lab-test/current
-ExecStart=/home/juniorwinkler/.dotnet/dotnet /var/www/deploy-lab-test/current/DeployLabApi.dll
+ExecStart=/home/juniorwinkler/.dotnet/dotnet /var/www/deploy-lab-test/current/app.dll
 Environment=ASPNETCORE_URLS=http://0.0.0.0:5001
 Environment=ASPNETCORE_ENVIRONMENT=Test
 Restart=always
@@ -100,7 +100,7 @@ After=network.target
 
 [Service]
 WorkingDirectory=/var/www/deploy-lab-prod/current
-ExecStart=/home/juniorwinkler/.dotnet/dotnet /var/www/deploy-lab-prod/current/DeployLabApi.dll
+ExecStart=/home/juniorwinkler/.dotnet/dotnet /var/www/deploy-lab-prod/current/app.dll
 Environment=ASPNETCORE_URLS=http://0.0.0.0:5002
 Environment=ASPNETCORE_ENVIRONMENT=Production
 Restart=always
