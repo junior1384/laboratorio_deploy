@@ -1,0 +1,40 @@
+name: Deploy Application
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: "GitHub repository"
+        required: true
+        default: "junior1384/api-test"
+
+      ref:
+        description: "Branch or tag"
+        required: true
+        default: "main"
+
+      environment:
+        description: "Environment"
+        required: true
+        type: choice
+        options:
+          - test
+          - prod
+        default: test
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy
+        run: |
+          chmod +x scripts/deploy.sh
+
+          ./scripts/deploy.sh \
+            "${{ inputs.repository }}" \
+            "${{ inputs.ref }}" \
+            "${{ inputs.environment }}"
