@@ -1,0 +1,17 @@
+name: Provision Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  provision:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run provisioning
+        run: |
+          chmod +x scripts/provision-server.sh
+          ./scripts/provision-server.sh
