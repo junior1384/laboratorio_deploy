@@ -75,10 +75,17 @@ fi
 PREVIOUS_RELEASE=""
 
 for RELEASE in "${RELEASES[@]}"; do
-    if [[ "$RELEASE" != "$CURRENT_RELEASE" ]]; then
+    if [[ "$RELEASE" == "$CURRENT_RELEASE" ]]; then
+        continue
+    fi
+
+    if [[ -f "$RELEASE/app.dll" ]]; then
         PREVIOUS_RELEASE="$RELEASE"
         break
     fi
+
+    echo "Ignorando release incompatível:"
+    echo "$RELEASE"
 done
 
 if [[ -z "$PREVIOUS_RELEASE" ]]; then
