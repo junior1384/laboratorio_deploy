@@ -56,7 +56,6 @@ fi
 echo "Release atual:"
 echo "$CURRENT_RELEASE"
 
-
 PREVIOUS_LINK="$CURRENT_RELEASE/previous"
 
 if [[ ! -L "$PREVIOUS_LINK" ]]; then
@@ -84,13 +83,6 @@ fi
 echo
 echo "Release anterior:"
 echo "$PREVIOUS_RELEASE"
-
-if [[ ! -f "$PREVIOUS_RELEASE/app.dll" ]]; then
-    echo
-    echo "ERRO: release anterior não possui app.dll:"
-    echo "$PREVIOUS_RELEASE"
-    exit 1
-fi
 
 echo
 echo "Alterando current..."
