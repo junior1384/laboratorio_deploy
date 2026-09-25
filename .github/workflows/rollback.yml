@@ -1,0 +1,28 @@
+name: Rollback Application
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment"
+        required: true
+        type: choice
+        options:
+          - test
+          - prod
+        default: test
+
+jobs:
+  rollback:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Rollback
+        run: |
+          chmod +x scripts/rollback.sh
+
+          ./scripts/rollback.sh \
+            "${{ inputs.environment }}"
