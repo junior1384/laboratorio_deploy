@@ -269,6 +269,10 @@ fi
 
 echo "Release anterior: ${PREVIOUS_RELEASE:-nenhuma}"
 
+if [[ -n "$PREVIOUS_RELEASE" ]]; then
+    ln -sfn "$PREVIOUS_RELEASE" "$RELEASE_DIR/previous"
+fi
+
 # ============================================================
 # Função de rollback
 # ============================================================

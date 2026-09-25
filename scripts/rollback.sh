@@ -56,40 +56,28 @@ fi
 echo "Release atual:"
 echo "$CURRENT_RELEASE"
 
-mapfile -t RELEASES < <(
-    find "$RELEASES_DIR" \
-        -mindepth 1 \
-        -maxdepth 1 \
-        -type d \
-        -printf '%T@ %p\n' \
-        | sort -nr \
-        | awk '{print $2}'
-)
 
-if [[ "${#RELEASES[@]}" -lt 2 ]]; then
+PREVIOUS_LINK="$CURRENT_RELEASE/previous"
+
+if [[ ! -L "$PREVIOUS_LINK" ]]; then
     echo
-    echo "ERRO: não existe release anterior para rollback."
+    echo "ERRO: a release atual não possui referência para a release anterior."
+    echo "$PREVIOUS_LINK"
     exit 1
 fi
 
-PREVIOUS_RELEASE=""
-
-for RELEASE in "${RELEASES[@]}"; do
-    if [[ "$RELEASE" == "$CURRENT_RELEASE" ]]; then
-        continue
-    fi
-
-    if [[ -f "$RELEASE/app.dll" ]]; then
-        PREVIOUS_RELEASE="$RELEASE"
-        break
-    fi
-
-    echo "Ignorando release incompatível:"
-    echo "$RELEASE"
-done
+PREVIOUS_RELEASE="$(readlink -f "$PREVIOUS_LINK")"
 
 if [[ -z "$PREVIOUS_RELEASE" ]]; then
-    echo "ERRO: não foi possível encontrar a release anterior."
+    echo
+    echo "ERRO: não foi possível resolver a release anterior."
+    exit 1
+fi
+
+if [[ ! -f "$PREVIOUS_RELEASE/app.dll" ]]; then
+    echo
+    echo "ERRO: release anterior não possui app.dll:"
+    echo "$PREVIOUS_RELEASE"
     exit 1
 fi
 
