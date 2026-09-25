@@ -129,13 +129,27 @@ echo
 echo "Health check:"
 echo "http://127.0.0.1:$PORT/health"
 
-if ! curl --fail --silent --show-error \
-    "http://127.0.0.1:$PORT/health"; then
+echo "Aguardando aplicação ficar disponível..."
 
-    echo
-    echo "ERRO: health check falhou."
-    exit 1
-fi
+HEALTH_URL="http://127.0.0.1:$PORT/health"
+
+for ATTEMPT in {1..30}; do
+    if curl --fail --silent --show-error "$HEALTH_URL"; then
+        echo
+        echo "Health check OK."
+        break
+    fi
+
+    if [[ "$ATTEMPT" -eq 30 ]]; then
+        echo
+        echo "ERRO: health check falhou após 30 segundos."
+        sudo -n systemctl status "$SERVICE" --no-pager || true
+        exit 1
+    fi
+
+    echo "Tentativa $ATTEMPT/30 falhou. Aguardando 1 segundo..."
+    sleep 1
+done
 
 echo
 echo
