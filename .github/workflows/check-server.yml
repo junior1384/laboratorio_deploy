@@ -1,0 +1,17 @@
+name: Check Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verificar servidor
+        run: |
+          chmod +x scripts/check-server.sh
+          ./scripts/check-server.sh
