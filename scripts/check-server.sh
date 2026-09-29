@@ -55,10 +55,10 @@ echo " 3. SUDO"
 echo "======================================"
 
 if command -v sudo >/dev/null 2>&1; then
-    if sudo -v >/dev/null 2>&1; then
-        check_ok "sudo disponível para o usuário $CURRENT_USER"
+    if id -nG "$CURRENT_USER" | grep -qw "sudo"; then
+        check_ok "Usuário $CURRENT_USER possui acesso ao sudo"
     else
-        check_error "O usuário $CURRENT_USER não possui acesso ao sudo."
+        check_error "O usuário $CURRENT_USER não pertence ao grupo sudo."
     fi
 else
     check_error "sudo não está instalado."
