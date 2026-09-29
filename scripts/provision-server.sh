@@ -55,7 +55,7 @@ juniorwinkler ALL=(root) NOPASSWD: /usr/bin/systemctl restart deploy-lab-prod.se
 juniorwinkler ALL=(root) NOPASSWD: /usr/bin/systemctl status deploy-lab-prod.service
 juniorwinkler ALL=(root) NOPASSWD: /usr/bin/systemctl enable deploy-lab-prod.service
 juniorwinkler ALL=(root) NOPASSWD: /usr/bin/systemctl disable deploy-lab-prod.service
-jjuniorwinkler ALL=(root) NOPASSWD: /usr/bin/systemctl is-active deploy-lab-test.service
+juniorwinkler ALL=(root) NOPASSWD: /usr/bin/systemctl is-active deploy-lab-test.service
 juniorwinkler ALL=(root) NOPASSWD: /usr/bin/systemctl is-active deploy-lab-prod.service
 EOF
 

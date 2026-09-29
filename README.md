@@ -52,3 +52,5 @@ Antes de executar o Provision, execute o workflow:
 `Check Server` https://github.com/junior1384/laboratorio_deploy/wiki/CHECKSERVER
 
 `Provision Server` https://github.com/junior1384/laboratorio_deploy/wiki/PROVISIONSERVER
+
+`Deploy Server`
