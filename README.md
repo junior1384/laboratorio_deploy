@@ -14,61 +14,41 @@ GitHub Actions consiga executar os workflows.
 ### Pré-requisitos
 
 - Ubuntu instalado
-- acesso SSH ao servidor
+    Windows PowerShell.
+    Execute: 
+    wsl --install -d Ubuntu
 - usuário com sudo
+    Ubuntu 
+    sudo -v
 - Git instalado
+    sudo apt update
+    sudo apt install -y git
 - conexão com a internet
+    curl -I https://github.com
 - GitHub Actions Runner instalado no servidor
-- Runner conectado ao repositório `laboratorio_deploy`
+    cd ~
+    git clone https://github.com/junior1384/laboratorio_deploy.git
+    cd ~/laboratorio_deploy
+    — preparar o token do GitHub Runner
+        Agora vamos para o GitHub, não no Ubuntu.
+        No repositório:
+        junior1384/laboratorio_deploy
+        vá em:
+        Settings → Actions → Runners → New self-hosted runner
+        Selecione:
+        Linux
+        x64
+        O GitHub vai mostrar um comando de configuração com um token temporário.
+        Ubuntu
+        export RUNNER_TOKEN='COLE_O_TOKEN_AQUI'
+- Runner conectado ao repositório `laboratorio_deploy`  
+        executar o bootstrap do Runner
+        chmod +x scripts/bootstrap-runner.sh
+        ./scripts/bootstrap-runner.sh
 - secret `SUDO_PASSWORD` configurado no GitHub
-
-### Como o GitHub acessa o servidor
-
-O projeto utiliza um GitHub Actions Runner instalado no próprio servidor.
-
-O Runner mantém uma conexão com o GitHub e recebe os jobs para execução.
-
-O fluxo é:
-
-GitHub
-↓
-laboratorio_deploy
-↓
-GitHub Actions
-↓
-Self-hosted Runner
-↓
-Servidor Ubuntu
-
-Os workflows utilizam:
-
-`runs-on: self-hosted`
-
-Dessa forma, o GitHub envia o job para o Runner disponível no servidor.
-
-### O que o sistema configura automaticamente
-
-Após os pré-requisitos serem atendidos, o projeto configura:
-
-- diretórios de deploy
-- ambientes TEST e PROD
-- serviços systemd
-- permissões
-- regras sudo
-- execução das aplicações
-- deploy
-- health check
-- rollback
-
-## Verificação do servidor
 
 Antes de executar o Provision, execute o workflow:
 
 `Check Server`
 
-Esse workflow executa automaticamente:
-
-```bash
-chmod +x scripts/check-server.sh
-./scripts/check-server.sh
-```
+`Provision Server`
