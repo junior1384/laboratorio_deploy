@@ -41,6 +41,12 @@ GitHub Actions consiga executar os workflows.
   O GitHub vai mostrar um comando de configuração com um token temporário.
   Ubuntu
   export RUNNER_TOKEN='COLE_O_TOKEN_AQUI'
+- Chave SSH somente para autenticar seu Git com o GitHub
+  ssh-keygen -t ed25519 -C "usuario"
+  cat ~/.ssh/id_ed25519.pub -> Salvar Chave em SSH github
+  ssh -T git@github.com -> yes
+  cd ~/laboratorio_deploy
+  git remote set-url origin git@github.com:junior1384/laboratorio_deploy.git
 - Runner conectado ao repositório `laboratorio_deploy`  
    executar o bootstrap do Runner
   chmod +x scripts/bootstrap-runner.sh
