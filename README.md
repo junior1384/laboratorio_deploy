@@ -14,41 +14,41 @@ GitHub Actions consiga executar os workflows.
 ### Pré-requisitos
 
 - Ubuntu instalado
-    Windows PowerShell.
-    Execute: 
-    wsl --install -d Ubuntu
+  Windows PowerShell.
+  Execute:
+  wsl --install -d Ubuntu
 - usuário com sudo
-    Ubuntu 
-    sudo -v
+  Ubuntu
+  sudo -v
 - Git instalado
-    sudo apt update
-    sudo apt install -y git
+  sudo apt update
+  sudo apt install -y git
 - conexão com a internet
-    curl -I https://github.com
+  curl -I https://github.com
 - GitHub Actions Runner instalado no servidor
-    cd ~
-    git clone https://github.com/junior1384/laboratorio_deploy.git
-    cd ~/laboratorio_deploy
-    — preparar o token do GitHub Runner
-        Agora vamos para o GitHub, não no Ubuntu.
-        No repositório:
-        junior1384/laboratorio_deploy
-        vá em:
-        Settings → Actions → Runners → New self-hosted runner
-        Selecione:
-        Linux
-        x64
-        O GitHub vai mostrar um comando de configuração com um token temporário.
-        Ubuntu
-        export RUNNER_TOKEN='COLE_O_TOKEN_AQUI'
+  cd ~
+  git clone https://github.com/junior1384/laboratorio_deploy.git
+  cd ~/laboratorio_deploy
+  — preparar o token do GitHub Runner
+  Agora vamos para o GitHub, não no Ubuntu.
+  No repositório:
+  junior1384/laboratorio_deploy
+  vá em:
+  Settings → Actions → Runners → New self-hosted runner
+  Selecione:
+  Linux
+  x64
+  O GitHub vai mostrar um comando de configuração com um token temporário.
+  Ubuntu
+  export RUNNER_TOKEN='COLE_O_TOKEN_AQUI'
 - Runner conectado ao repositório `laboratorio_deploy`  
-        executar o bootstrap do Runner
-        chmod +x scripts/bootstrap-runner.sh
-        ./scripts/bootstrap-runner.sh
+   executar o bootstrap do Runner
+  chmod +x scripts/bootstrap-runner.sh
+  ./scripts/bootstrap-runner.sh
 - secret `SUDO_PASSWORD` configurado no GitHub
 
 Antes de executar o Provision, execute o workflow:
 
-`Check Server`
+`Check Server` https://github.com/junior1384/laboratorio_deploy/wiki/CHECKSERVER
 
-`Provision Server`
+`Provision Server` https://github.com/junior1384/laboratorio_deploy/wiki/PROVISIONSERVER
