@@ -55,10 +55,10 @@ echo " 3. SUDO"
 echo "======================================"
 
 if command -v sudo >/dev/null 2>&1; then
-    if sudo -n true >/dev/null 2>&1; then
+    if sudo -v >/dev/null 2>&1; then
         check_ok "sudo disponível para o usuário $CURRENT_USER"
     else
-        check_error "O usuário $CURRENT_USER não possui sudo sem interação."
+        check_error "O usuário $CURRENT_USER não possui acesso ao sudo."
     fi
 else
     check_error "sudo não está instalado."
