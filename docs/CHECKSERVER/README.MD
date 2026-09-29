@@ -4,9 +4,9 @@ Cria:
 
 /var/www/
 ├── deploy-lab-test/
-│   └── releases/
+│ └── releases/
 └── deploy-lab-prod/
-    └── releases/
+└── releases/
 
 A ideia é manter TEST e PROD separados e guardar versões/releases.
 
@@ -44,8 +44,7 @@ PROD → porta 5002
 
 E definem que a aplicação será executada como:
 
-juniorwinkler
-5. Habilita os serviços
+juniorwinkler 5. Habilita os serviços
 
 Executa o equivalente a:
 

@@ -9,34 +9,27 @@ Ele **não instala nem configura nada no servidor**. Sua função é apenas vali
 O script `scripts/check-server.sh` verifica:
 
 1. **Sistema operacional**
-
-   * Confirma se o servidor está executando Ubuntu.
+   - Confirma se o servidor está executando Ubuntu.
 
 2. **Usuário atual**
-
-   * Identifica o usuário utilizado pelo GitHub Actions Runner.
+   - Identifica o usuário utilizado pelo GitHub Actions Runner.
 
 3. **Sudo**
-
-   * Verifica se o usuário atual possui acesso ao `sudo`.
-   * Neste momento, o sudo **não precisa ser configurado como NOPASSWD**.
-   * A configuração das permissões específicas sem senha será feita posteriormente pelo **Provision Server**.
+   - Verifica se o usuário atual possui acesso ao `sudo`.
+   - Neste momento, o sudo **não precisa ser configurado como NOPASSWD**.
+   - A configuração das permissões específicas sem senha será feita posteriormente pelo **Provision Server**.
 
 4. **Git**
-
-   * Confirma que o Git está instalado.
+   - Confirma que o Git está instalado.
 
 5. **Conexão com a internet**
-
-   * Testa se o servidor consegue acessar o GitHub.
+   - Testa se o servidor consegue acessar o GitHub.
 
 6. **GitHub Actions Runner**
-
-   * Verifica se o diretório do Runner existe.
+   - Verifica se o diretório do Runner existe.
 
 7. **Status do Runner**
-
-   * Confirma se o serviço do GitHub Actions Runner está instalado e ativo.
+   - Confirma se o serviço do GitHub Actions Runner está instalado e ativo.
 
 ### Como executar
 
@@ -75,11 +68,11 @@ O **Check Server** é uma etapa de validação.
 
 Ele não:
 
-* cria diretórios de aplicação;
-* cria os ambientes TEST e PROD;
-* cria serviços `systemd`;
-* configura permissões específicas de `sudo`;
-* inicia as aplicações;
-* faz deploy.
+- cria diretórios de aplicação;
+- cria os ambientes TEST e PROD;
+- cria serviços `systemd`;
+- configura permissões específicas de `sudo`;
+- inicia as aplicações;
+- faz deploy.
 
 Essas tarefas pertencem às etapas seguintes do processo, principalmente ao **Provision Server** e ao **Deploy**.
